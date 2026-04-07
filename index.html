@@ -5291,7 +5291,7 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
 
   // ========== Show Section (scroll to) ==========
   var isScrollingToSection = false;
-  function showSection(idx, skipScroll) {
+  function showSection(idx, skipScroll, onScrollDone) {
     var section = POLICY_DATA[idx];
     if (!section) return;
 
@@ -5332,7 +5332,10 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
           var r = target.getBoundingClientRect();
           var cr = mainContent.getBoundingClientRect();
           mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - 10, behavior: 'smooth' });
-          setTimeout(function() { isScrollingToSection = false; }, 800);
+          setTimeout(function() {
+            isScrollingToSection = false;
+            if (onScrollDone) onScrollDone();
+          }, 800);
         }, 350); // wait for slide transition (300ms) + buffer
       }
     } else {
@@ -5342,7 +5345,10 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
         var r = target.getBoundingClientRect();
         var cr = mainContent.getBoundingClientRect();
         mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - 10, behavior: 'smooth' });
-        setTimeout(function() { isScrollingToSection = false; }, 800);
+        setTimeout(function() {
+          isScrollingToSection = false;
+          if (onScrollDone) onScrollDone();
+        }, 800);
       }
     }
   }
@@ -5604,9 +5610,10 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
                 bodyEl.innerHTML = formatContent(POLICY_DATA[idx].content, q, idx);
               }
             }
-            showSection(idx);
-            // Scroll to first highlight after section scroll completes
-            scrollToFirstHighlight(idx);
+            // showSection scrolls to section, then callback scrolls to highlight
+            showSection(idx, false, function() {
+              scrollToFirstHighlight(idx);
+            });
           };
         })(r.idx, query));
 
@@ -5637,23 +5644,21 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
 
   // ========== Scroll to First Highlight ==========
   function scrollToFirstHighlight(sectionIdx) {
-    // Wait for showSection scroll to finish, then scroll to highlight
-    var delay = (window.innerWidth <= 900) ? 900 : 500;
-    setTimeout(function() {
-      var block = document.getElementById('section-block-' + sectionIdx);
-      if (!block) return;
-      var highlights = block.querySelectorAll('.search-highlight');
-      if (highlights.length > 0) {
-        var first = highlights[0];
-        first.classList.add('search-highlight-focus');
-        var r = first.getBoundingClientRect();
-        var cr = mainContent.getBoundingClientRect();
-        mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - (cr.height / 3), behavior: 'smooth' });
-        setTimeout(function() {
-          first.classList.remove('search-highlight-focus');
-        }, 2000);
-      }
-    }, delay);
+    var block = document.getElementById('section-block-' + sectionIdx);
+    if (!block) return;
+    var highlights = block.querySelectorAll('.search-highlight');
+    if (highlights.length > 0) {
+      var first = highlights[0];
+      first.classList.add('search-highlight-focus');
+      isScrollingToSection = true;
+      var r = first.getBoundingClientRect();
+      var cr = mainContent.getBoundingClientRect();
+      mainContent.scrollTo({ top: mainContent.scrollTop + r.top - cr.top - (cr.height / 3), behavior: 'smooth' });
+      setTimeout(function() {
+        isScrollingToSection = false;
+        first.classList.remove('search-highlight-focus');
+      }, 2000);
+    }
   }
 
   // ========== Keyboard Shortcuts ==========
