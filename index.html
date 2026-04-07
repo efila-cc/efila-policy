@@ -359,7 +359,7 @@ body {
 
 /* Welcome state */
 .welcome {
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -763,13 +763,16 @@ body {
   /* 戻るボタン表示 */
   .mobile-back-btn { display: flex; }
 
-  /* コンテンツカードを全画面に */
+  /* コンテンツカードを全画面に（.visibleクラス付与時のみ表示） */
   .content-card {
     border-radius: 0;
     box-shadow: none;
     flex: 1;
-    display: flex;
+    display: none;
     flex-direction: column;
+  }
+  .content-card.visible {
+    display: flex;
   }
   .content-body { flex: 1; }
   .content-header { padding: 20px 16px 12px; }
