@@ -5120,11 +5120,14 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
         for (var i = 0; i < patterns.length; i++) {
           if (patterns[i].test(trimmed)) {
             var title = trimmed.length > 50 ? trimmed.substring(0, 50) + '...' : trimmed;
-            // 同じ丸数字・ローマ数字で始まる項目は後のもので上書き
-            var prefix = trimmed.charAt(0);
+            // Extract numeral prefix (e.g. "Ⅰ" or "XIII") for dedup
+            var prefixMatch = trimmed.match(/^([\u2160-\u216F]|[IVX]+)[\uff0e\.]/);
+            var prefix = prefixMatch ? prefixMatch[1] : trimmed.charAt(0);
             var dupIdx = -1;
             for (var j = 0; j < subs.length; j++) {
-              if (subs[j].title.charAt(0) === prefix) { dupIdx = j; break; }
+              var subPrefixMatch = subs[j].title.match(/^([\u2160-\u216F]|[IVX]+)[\uff0e\.]/);
+              var subPrefix = subPrefixMatch ? subPrefixMatch[1] : subs[j].title.charAt(0);
+              if (subPrefix === prefix) { dupIdx = j; break; }
             }
             if (dupIdx >= 0) {
               subs[dupIdx].title = title;
@@ -5172,7 +5175,12 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
     // Scroll to sub-section in content after render
     setTimeout(function() {
       var scroller = document.querySelector('main.main');
-      var elements = contentBody.querySelectorAll('.policy-heading-1, .policy-heading-2, .policy-heading-3, .policy-line');
+      // Search in allSectionsContainer (continuous scroll mode) or contentBody (single section mode)
+      var searchContainer = allSectionsContainer.style.display !== 'none' ? allSectionsContainer : contentBody;
+      var sectionBlock = document.getElementById('section-block-' + idx);
+      // Narrow search to the target section block if available
+      var searchScope = sectionBlock || searchContainer;
+      var elements = searchScope.querySelectorAll('.policy-heading-1, .policy-heading-2, .policy-heading-3, .policy-line');
       for (var i = 0; i < elements.length; i++) {
         var el = elements[i];
         if (el.textContent.indexOf(subTitle) >= 0 || subTitle.indexOf(el.textContent.trim()) >= 0) {
@@ -5383,7 +5391,7 @@ var GLOSSARY_SECTION_IDX = POLICY_DATA.length - 1;
 
       // Detect heading level
       var isKeyTitle = (trimmed === '\u751f\u304d\u304d\u308b' || trimmed === '\u8ab0\u3072\u3068\u308a\u53d6\u308a\u6b8b\u3055\u306a\u3044\u8857\u3092\u3064\u304f\u308b\u3002' || trimmed === 'EFILa WAY');
-      var isRoman = /^[\u2160-\u216F][\uff0e\.]/.test(trimmed);
+      var isRoman = /^[\u2160-\u216F][\uff0e\.]/.test(trimmed) || /^[IVX]+[\.\uff0e]\s*/.test(trimmed);
       var isDoubleAngle = /^[\u226A\u300A<\uff1c].+[\u226B\u300B>\uff1e]/.test(trimmed);
       var isCircleNum = /^[\u2460-\u2473]/.test(trimmed);
       var isNumbered = /^[1-9\uff11-\uff19]\d*[\.\uff0e\uff1a:]/.test(trimmed);
